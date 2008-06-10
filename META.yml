@@ -1,0 +1,15 @@
+--- #YAML:1.0
+name:                iTunes-Sid
+version:             0.01_01
+abstract:            Perl iTunes compatible common user database manipulations
+license:             Other
+author:              
+    - William Hererra (whererra@skylightview.com)
+generated_by:        ExtUtils::MakeMaker version 6.42_01
+distribution_type:   module
+requires:     
+    Audio::M4P::Atom:              0.4
+    Scalar::Util:                  0
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3

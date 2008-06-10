@@ -1,0 +1,26 @@
+NAME
+
+iTunes::Sid -- read/write iTunes common user database format 
+
+DESCRIPTION
+    
+read/write iTunes common user database format files, including sidb and sidd
+
+SYNOPSIS
+
+use iTunes::Sid;
+
+my $sidb = iTunes::Sid->new( 
+  file => 't/sidb', 
+  DEBUG => 2, 
+  DEBUGDUMPFILE => 't/sidb_dump.html',
+);
+
+
+To install the module...
+
+perl Makefile.PL
+make
+make test
+make install
+

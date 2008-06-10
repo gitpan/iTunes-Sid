@@ -1,0 +1,3 @@
+TODO list for Perl modules under iTunes::Sid
+    - We need a fuller suite of tests. 
+    - Add some of the associated crypto, when ready.
