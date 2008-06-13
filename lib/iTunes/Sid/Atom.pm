@@ -10,19 +10,25 @@ use Carp qw( carp croak );
 
 use base 'Audio::M4P::Atom';
 
-our $VERSION = '0.01';
+our $VERSION = '0.02_01';
 
 our $DEBUG = 0;
 
-#------------- useful hashes --------------------#
+#------------- useful constants and hashes --------------------#
 
-my %sid_container_atom_types = (
-    sean => 1,    # for sidb files
-    dbag => 1,    # for sidd files
+our %sid_root_atom_types = (
+    sean => 'sidb',
+    dbag => 'sidd',
+);
+
+our %sid_container_atom_types = (
+    sean => 1,    # root atom for sidb files
+    dbag => 1,    # root atom for sidd files
     grup => 1,    # for all the data in the package
     head => 1,    # header atom, first thing in the sid, contains the guid
     user => 1,    # user container, contains a given user's keys
-    tail => 1,    # the last atom in the sid, contains itgr
+    usag => 1,    # iTunes security certificate container: 12 bytes then cert
+    tail => 1,    # the last container in the sid, contains itgr
 
     # the "key " (4 bytes, last is a space) container atom data structure
     # is always always of size 228, and contains valu, type, and sign atoms.
@@ -31,13 +37,13 @@ my %sid_container_atom_types = (
     "key " => 1,
 );
 
-my %sid_noncontainer_atom_types = (
+our %sid_noncontainer_atom_types = (
     vers => 1,    # version data: 12 bytes 0x000100000000 then 4 bytes 0x01010
     guid => 1,    # iTMS guid, data: 12 bytes 0x000100000000 then a 6-byte value
     valu => 1,    # 36 bytes, data: 12 bytes of 0x00010000 then a 16-byte value
     type => 1,    # 24 bytes, usually data is a redundant 0x000100000000
     sign => 1,    # signature, 148 bytes, 0x00010000000 then a 128-byte value
-    itgr => 1,    # the last atom in the sid, but used for what???
+    itgr => 1,    # the last atom in the sid, unclear use; padding to 2**5*n?
 );
 
 #----------------- class methods ------------------------------#
@@ -59,6 +65,13 @@ sub isContainer {
     }
 }
 
+# Test if a string label or an atom is a root atom type
+sub isRootAtomType {
+    my $type = shift;
+    return $sid_root_atom_types{ ref $type ? $type->{type} : $type };
+}
+
+
 =head1 NAME
 
 =over 4
@@ -71,7 +84,7 @@ iTunes::Sid::Atom - Apple iTunes database component interface
 
 =over 4
 
-    See iTines::Sid documentation.
+    See iTunes::Sid documentation.
     
 =back
 
@@ -89,16 +102,25 @@ iTunes::Sid::Atom - Apple iTunes database component interface
 
 =item B<new>
 
-    my $atm = iTunes::Sid::Atom( bufref => \$buf, start => $position );
+    my $atm = iTunes::Sid::Atom( rbuf => \$buf, read_buffer_position => $position );
     
-    Create an atom object.  bufref => \$buf is a named argument which is a 
-    reference to the memory buffer containing the atom; start => $position is 
-    the offset in the buffer where the atom's start is located.
+    Create an atom object.  rbuf => \$buf is a named argument which is a 
+    reference to the memory buffer containing the atom.
+    read_buffer_position => $position is the offset in the buffer where the 
+    atom's start for reading is located.
 
 =item B<isContainer>
 
+    $atom->isContainer;
+
     Overloaded for parent, to allow reading of atom types for container versus
     non-container atoms during parsing.
+
+=item B<isRootAtomType>
+
+    $atom->isRootAtomType();
+
+    returns 1 if the atom is a root type, otherwise undef.
 
 =back
 

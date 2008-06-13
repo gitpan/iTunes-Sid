@@ -3,4 +3,9 @@ Revision history for Perl modules under Audio::M4P
 0.01_01 Mon 19 May 2008
     - original (developer) version
     
+0.02_01 Tue 10 June 2008
+    - add Util functions
+    - pod corrections
+    
+    
     
