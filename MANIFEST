@@ -8,6 +8,7 @@ lib/iTunes/Sid/Atom.pm
 t/01_test.t
 t/02_pod_test.t
 t/03_pod_coverage_test.t
+examples/get_keys_for_vlc.pl
 Makefile.PL
 META.yml 
 

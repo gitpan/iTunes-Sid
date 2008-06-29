@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                iTunes-Sid
-version:             0.031
+version:             0.032
 abstract:            iTunes SC Info.sidx common user database manipulation
 license:             Other
 author:              

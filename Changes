@@ -15,4 +15,6 @@ Revision history for Perl modules under Audio::M4P
 0.031 Sun 29 Jun 2008
     - fixed directory / file generation for .drms key files, for VLC compatibility
 
-
+0.032 Mon 30 Jun 2008
+    -POD revisons
+    - example script added

@@ -21,7 +21,7 @@ use Scalar::Util qw( weaken );
 
 use iTunes::Sid::Atom;
 
-our $VERSION = '0.031';
+our $VERSION = '0.032';
 
 #------------------- useful constants -----------------------------#
 
@@ -672,17 +672,17 @@ sub write_all_user_keys_to_drms_dir {
     }
 }
 
-=head1 B <NAME>
+=head1 B<NAME>
 
-  iTunes::Sid - Apple iTunes SC Info common user database file interface
+  iTunes::Sid -- Apple iTunes SC Info common user database file interface
 
-=head1 B <SYNOPSIS>
+=head1 B<SYNOPSIS>
 
 =over 4
 
 =back
 
-=head1 B <DESCRIPTION>
+=head1 B<DESCRIPTION>
 
 =over 4
 
@@ -691,14 +691,6 @@ sub write_all_user_keys_to_drms_dir {
   used by iTunes for storage of keys and certificates.
 
 =back
-
-
-=head2 Why "Sid.pm" as a module name?
-
-This Apple database format is not publicly documented.  "iTunes::SC Info" 
-might have been used as a name, but we can't use spaces in module names.  
-The old DOS type 3-digit extension of "SC_Info/SC Info.sidb" and 
-"SC_Info/SC Info.sidd" is "sid," so that was used.
 
 
 =head1 B<METHODS>
