@@ -1,10 +1,11 @@
 NAME
 
-iTunes::Sid -- read/write iTunes common user database format 
+iTunes::Sid - read/write iTunes common user database format 
 
 DESCRIPTION
     
-read/write iTunes common user database format files, including sidb and sidd
+read/write iTunes common user database format files, 
+  including /SC Info/SC Info.sidb and /SC Info/SC Info.sidd
 
 SYNOPSIS
 

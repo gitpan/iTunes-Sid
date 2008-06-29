@@ -10,15 +10,15 @@ use Carp qw( carp croak );
 
 use base 'Audio::M4P::Atom';
 
-our $VERSION = '0.02_01';
+our $VERSION = '0.03_01';
 
 our $DEBUG = 0;
 
 #------------- useful constants and hashes --------------------#
 
 our %sid_root_atom_types = (
-    sean => 'sidb',
-    dbag => 'sidd',
+    sean => 1,
+    dbag => 1,
 );
 
 our %sid_container_atom_types = (
@@ -27,11 +27,11 @@ our %sid_container_atom_types = (
     grup => 1,    # for all the data in the package
     head => 1,    # header atom, first thing in the sid, contains the guid
     user => 1,    # user container, contains a given user's keys
-    usag => 1,    # iTunes security certificate container: 12 bytes then cert
+    usag => 1,    # iTunes security certificate container for valu and sign
     tail => 1,    # the last container in the sid, contains itgr
 
     # the "key " (4 bytes, last is a space) container atom data structure
-    # is always always of size 228, and contains valu, type, and sign atoms.
+    # is generally of fixed size, and contains valu, type, and sign atoms.
     # The type is generally 0x000100000000, and the valu and sign vary.
     # There is no key count kept in the database, just a list of key atoms.
     "key " => 1,
@@ -65,10 +65,37 @@ sub isContainer {
     }
 }
 
+sub Ending {
+    my($self) = @_;
+    return $self->start + $self->size;
+}
+
 # Test if a string label or an atom is a root atom type
 sub isRootAtomType {
     my $type = shift;
     return $sid_root_atom_types{ ref $type ? $type->{type} : $type };
+}
+
+# get the atom's version, as 3, 32-bit big endian integers separated by '.'
+sub VersionString {
+    my($self) = @_;
+    return join '.', unpack "NNN", $self->data;
+}
+
+sub MainVersion {
+    my($self) = @_;
+    return unpack "N", $self->data;
+}
+
+sub NonVersionData {
+    my($self) = @_;
+    return substr $self->data, 12;
+}
+
+# a common data is a 32 bit bigendian int after the 12 byte version string for a data atom
+sub Data32 {
+    my($self) = @_;
+    return unpack "N", $self->NonVersionData;
 }
 
 
@@ -122,8 +149,30 @@ iTunes::Sid::Atom - Apple iTunes database component interface
 
     returns 1 if the atom is a root type, otherwise undef.
 
-=back
 
+=item B<Ending>
+
+    Returns the buffer location of the ending of the atom (the first byte position after the data's end)
+
+=item B<VersionString>
+
+    Returns the version as string of 3 ints, as in version 3.4.5 or 0.0.1
+
+
+=item B<MainVersion>
+
+    Returns the first version field integer, so version 3.4.5 returns just 3
+
+=item B<NonVersionData>
+
+    Returnsdata after the 12 byte version fields
+
+
+=item B<Data32>
+
+    Returns a 32 bit bigendian int after the 12 byte version string for a data atom
+
+=back
 
 =head1 SEE ALSO
 

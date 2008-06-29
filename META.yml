@@ -1,7 +1,7 @@
 --- #YAML:1.0
 name:                iTunes-Sid
-version:             0.02_01
-abstract:            Perl iTunes compatible common user database manipulation
+version:             0.03
+abstract:            iTunes SC Info.sidx common user database manipulation
 license:             Other
 author:              
     - William Hererra (whererra@skylightview.com)
@@ -9,12 +9,18 @@ generated_by:        ExtUtils::MakeMaker version 6.42_01
 distribution_type:   module
 requires:     
     Audio::M4P::Atom:              0.4
-    Crypt::AppleTwoFish:           0.5
+    Carp:                          0
+    Crypt::AppleTwoFish:           0.05
     Crypt::Rijndael:               0
     Digest::MD5:                   0
+    File::Basename:                0
+    File::Find::Rule:              0
+    List::Util:                    0
     Math::BigInt:                  0
+    Parse::DMIDecode:              0
+    Parse::Win32Registry:          0
     Scalar::Util:                  0
-    Win32::Registry::File:         0
+    Sys::Info:                     0
 meta-spec:
     url:     http://module-build.sourceforge.net/META-spec-v1.3.html
     version: 1.3

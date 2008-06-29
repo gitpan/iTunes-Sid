@@ -7,7 +7,5 @@ use Test::More tests => 2;
 
 BEGIN { use_ok('iTunes::Sid'); }
 
-
 my $object = iTunes::Sid->new;
 isa_ok( $object, 'iTunes::Sid' );
-
