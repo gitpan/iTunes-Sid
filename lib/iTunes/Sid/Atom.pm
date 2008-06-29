@@ -10,7 +10,7 @@ use Carp qw( carp croak );
 
 use base 'Audio::M4P::Atom';
 
-our $VERSION = '0.03_01';
+our $VERSION = '0.031';
 
 our $DEBUG = 0;
 

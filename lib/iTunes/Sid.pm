@@ -21,7 +21,7 @@ use Scalar::Util qw( weaken );
 
 use iTunes::Sid::Atom;
 
-our $VERSION = '0.032';
+our $VERSION = '0.033';
 
 #------------------- useful constants -----------------------------#
 
@@ -666,23 +666,24 @@ sub write_all_user_keys_to_drms_dir {
                 carp(" Cannot open $filename for output: $!");
                 next;
             };
+            binmode $outf;
             print $outf $keyval;
             close $outf;
         }
     }
 }
 
-=head1 B<NAME>
+=head1 NAME
 
   iTunes::Sid -- Apple iTunes SC Info common user database file interface
 
-=head1 B<SYNOPSIS>
+=head1 SYNOPSIS
 
 =over 4
 
 =back
 
-=head1 B<DESCRIPTION>
+=head1 DESCRIPTION
 
 =over 4
 
@@ -693,7 +694,7 @@ sub write_all_user_keys_to_drms_dir {
 =back
 
 
-=head1 B<METHODS>
+=head1 METHODS
 
 =over 4
 
@@ -821,7 +822,7 @@ sub write_all_user_keys_to_drms_dir {
 
 =back
 
-=head1 B<SEE ALSO>
+=head1 SEE ALSO
 
 =over 4
 
@@ -831,7 +832,7 @@ sub write_all_user_keys_to_drms_dir {
 
 =back
 
-=head1 B<BUGS>
+=head1 BUGS
 
 =over 4
 
@@ -839,7 +840,7 @@ Lots.  Windows Vista dual boot compatibility seems flawed.
 
 =back
 
-=head1 B<AUTHOR>
+=head1 AUTHOR
 
 =over 4
 
@@ -847,7 +848,7 @@ William Herrera ( B<wherrera@skylightview.com> ).
 
 =back
 
-=head1 B<SUPPORT> 
+=head1 SUPPORT 
 
 =over 4
 
@@ -855,7 +856,7 @@ Questions, feature requests and bug reports should go to <wherrera@skylightview.
 
 =back
                                                
-=head1 B<NOTES>
+=head1 NOTES
 
 =head2 Regarding the US DMCA Law
 
@@ -898,15 +899,15 @@ Questions, feature requests and bug reports should go to <wherrera@skylightview.
 
     The portion of the DMCA quoted above allows usage of protected content to 
     enable interoperability beween Linux and other systems.  Therefore, since 
-    this package and other (so far unreleased) Perl code are primarily designed 
-    to allow Linux, Solaris, and Unix systems to achieve interoperability with 
-    iTunes and the iTunes Music Store, they ARE legal under the DMCA. We are 
-    somewhat concerned about the word "solely" in the text above, since this 
-    package works under OS X and Windows as well as Linux.  For that reason, 
-    please also see the COPYRIGHT below.
+    this package and related Perl code are primarily designed to allow Linux, 
+    Solaris, and Unix systems to achieve interoperability with iTunes and the 
+    iTunes Music Store, they ARE legal under the DMCA. We are somewhat 
+    concerned about the word "solely" in the text above, since this package 
+    works under OS X and Windows as well as Linux.  For that reason, please 
+    also see the COPYRIGHT below.
 
 
-=head1 B<COPYRIGHT>
+=head1 COPYRIGHT
 
 =over 4
 
