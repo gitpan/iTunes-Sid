@@ -14,7 +14,7 @@ WriteMakefile(
                       Math::BigInt => 0, File::Find::Rule => 0,
                       Parse::DMIDecode => 0, Sys::Info => 0,
                       Parse::Win32Registry => 0, Carp => 0,
-                      List::Util => 0,
+                      List::Util => 0, File::Path => 0,
                     },
 );
 

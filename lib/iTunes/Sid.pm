@@ -10,6 +10,7 @@ use if $^O ne "MSWin32", 'Sys::Info';
 use if $^O ne "MSWin32", 'vars', qw( $Registry );
 use if $^O eq 'MSWin32', 'Win32::TieRegistry';
 use if $^O eq 'MSWin32', 'Win32::DriveInfo';
+use File::Path;
 use Digest::MD5;
 use File::Basename;
 use Crypt::Rijndael;
@@ -20,7 +21,7 @@ use Scalar::Util qw( weaken );
 
 use iTunes::Sid::Atom;
 
-our $VERSION = '0.03';
+our $VERSION = '0.031';
 
 #------------------- useful constants -----------------------------#
 
@@ -56,7 +57,7 @@ sub _drms_directory {
     my $home_dir = $ENV{APPDATA} || $ENV{HOME} || q{~};
     my $sPfix = ( $^O eq 'MSWin32' ) ? q{} : q{.};
     my $dirSep = q{/};
-    return $home_dir . $dirSep . $sPfix . $dirSep;
+    return $home_dir . $dirSep . $sPfix . 'drms' . $dirSep;
 }
 
 sub get_sid_iv {
@@ -655,11 +656,13 @@ sub write_all_user_keys_to_drms_dir {
     my ( $self, %args ) = @_;
     my $overwrite_ok = $args{overwrite_ok};
     my $drm_dir      = _drms_directory();
+    mkpath( $drm_dir );
     while ( my ( $userID, $keys ) = each %{ $self->{user_drm_keys} } ) {
         while ( my ( $keyID, $keyval ) = each %{$keys} ) {
-            my $filename = sprintf "%s%08d.%03d", $userID, $keyID;
+            my $filename = sprintf "%s%08X.%03d", $drm_dir, $userID, $keyID;
             next if -f $filename and !$overwrite_ok;
-            open my $outf, '<', $filename or do {
+            print "printing key $keyval to file $filename\n" if $self->{DEBUG};
+            open my $outf, '>', $filename or do {
                 carp(" Cannot open $filename for output: $!");
                 next;
             };

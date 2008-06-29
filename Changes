@@ -12,5 +12,7 @@ Revision history for Perl modules under Audio::M4P
     - a few typo corrections
     - better compatibility with the Crypt::AppleTwoFish veggie algorithm
     
-    
-    
+0.031 Sun 29 Jun 2008
+    - fixed directory / file generation for .drms key files, for VLC compatibility
+
+
