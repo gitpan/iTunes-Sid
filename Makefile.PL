@@ -12,9 +12,7 @@ WriteMakefile(
                       Crypt::Rijndael => 0, Digest::MD5 => 0,
                       Crypt::AppleTwoFish => 0.05, File::Basename => 0,
                       Math::BigInt => 0, File::Find::Rule => 0,
-                      Parse::DMIDecode => 0, Sys::Info => 0,
-                      Parse::Win32Registry => 0, Carp => 0,
-                      List::Util => 0, File::Path => 0,
+                      Carp => 0, List::Util => 0, File::Path => 0,
                     },
 );
 

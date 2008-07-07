@@ -1,25 +1,34 @@
-Revision history for Perl modules under Audio::M4P
+Revision history for Perl modules under iTunes::Sid
 
-0.01_01 Mon 19 May 2008
-    - original (developer) version
-    
-0.02_01 Tue 10 June 2008
-    - add utility functions
-    - pod corrections
-    
-0.03 Sat 28 Jun 2008
-    - initial regular release
-    - a few typo corrections
-    - better compatibility with the Crypt::AppleTwoFish veggie algorithm
-    
-0.031 Sun 29 Jun 2008
-    - fixed directory / file generation for .drms key files, for VLC compatibility
+0.040  Thu 3 Jul 2008
+    - Changes in the registry under Vista SP1 may make direct hive reading
+      difficult, so this package will just provide a Windows batch file to get 
+      the required data.  
+    - more examples and a HOWTO for Linux in the POD.
+
+0.034 Wed 2 Jul 2008
+    - fix some minor typos
+
+0.033 Tue 1 Jul 2008
+    - POD revisions
+    - fix binmode output of keys
 
 0.032 Mon 30 Jun 2008
     -POD revisons
     - example script added
 
-0.033 Mon 1 Jul 2008
-    - POD revisions
-    - fix binmode output of keys
+0.031 Sun 29 Jun 2008
+    - fixed directory / file generation for .drms key files, for VLC compatibility
+
+0.03 Sat 28 Jun 2008
+    - initial regular release
+    - a few typo corrections
+    - better compatibility with the Crypt::AppleTwoFish veggie algorithm
+
+0.02_01 Tue 10 June 2008
+    - add utility functions
+    - pod corrections
+
+0.01_01 Mon 19 May 2008
+    - original (developer) version
 

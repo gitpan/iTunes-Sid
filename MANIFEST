@@ -9,6 +9,8 @@ t/01_test.t
 t/02_pod_test.t
 t/03_pod_coverage_test.t
 examples/get_keys_for_vlc.pl
+examples/get_hwdata.cmd
+examples/print_mac.pl
 Makefile.PL
 META.yml 
 
