@@ -1,5 +1,5 @@
 @echo off
-rem get_hwdata.cmd, run as "get_hwdata.cmd > \regdata" from a WINDOWS prompt
+rem get_hwdata.cmd, run as "get_hwdata.cmd" from a WINDOWS prompt
     
 REG query "HKLM\HARDWARE\DESCRIPTION\System" /v SystemBiosVersion  > c:\regdata
 

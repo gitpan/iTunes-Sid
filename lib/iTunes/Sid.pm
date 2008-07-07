@@ -9,14 +9,13 @@ use File::Basename;
 use Crypt::Rijndael;
 use File::Find::Rule;
 use Crypt::AppleTwoFish;
-use Parse::Win32Registry;
 use Carp qw( carp croak );
 use List::Util qw( first );
 use Scalar::Util qw( weaken );
 
 use iTunes::Sid::Atom;
 
-our $VERSION = '0.40';
+our $VERSION = '0.41';
 
 #-----------  determines whether data is saved to .drms by default -----------#
 
@@ -893,10 +892,10 @@ Windows).  One partition is to boot OS X or Windows, another Linux. Make sure
 that your Darwin or NTFS partition is mounted at least for reading!
 
 2A.  (iTunes for Windows) Run the file ./examples/get_hwdata.cmd in the 
-     iTunes::Sid /examples directory in this distribution and redirect to a 
-     file given as the command's argument, as in
+     iTunes::Sid /examples directory in this distribution, which creates an
+     output file as c:\regdata, as in
 
-     c:> get_hwdata.cmd c:\regdata
+     c:> get_hwdata.cmd 
 
     Then reboot to Linux and mount the windows partion (it should be attached 
     to /media/disk1/ or /media/disk2, etc).  
