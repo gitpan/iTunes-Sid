@@ -10,18 +10,18 @@ use Carp qw( carp croak );
 
 use base 'Audio::M4P::Atom';
 
-our $VERSION = '0.031';
+our $VERSION = '0.042';
 
 our $DEBUG = 0;
 
 #------------- useful constants and hashes --------------------#
 
-our %sid_root_atom_types = (
+my %sid_root_atom_types = (
     sean => 1,
     dbag => 1,
 );
 
-our %sid_container_atom_types = (
+my %sid_container_atom_types = (
     sean => 1,    # root atom for sidb files
     dbag => 1,    # root atom for sidd files
     grup => 1,    # for all the data in the package
@@ -37,7 +37,7 @@ our %sid_container_atom_types = (
     "key " => 1,
 );
 
-our %sid_noncontainer_atom_types = (
+my %sid_noncontainer_atom_types = (
     vers => 1,    # version data: 12 bytes 0x000100000000 then 4 bytes 0x01010
     guid => 1,    # iTMS guid, data: 12 bytes 0x000100000000 then a 6-byte value
     valu => 1,    # 36 bytes, data: 12 bytes of 0x00010000 then variable data
@@ -98,6 +98,9 @@ sub Data32 {
     return unpack "N", $self->NonVersionData;
 }
 
+1;
+
+__END__
 
 =head1 NAME
 
@@ -212,4 +215,3 @@ Questions, feature requests and bug reports should go to <wherrera@skylightview.
 
 =cut
 
-1;

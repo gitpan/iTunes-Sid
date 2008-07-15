@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use File::Path;
+use IPC::Open3;
 use Digest::MD5;
 use File::Basename;
 use Crypt::Rijndael;
@@ -15,7 +16,7 @@ use Scalar::Util qw( weaken );
 
 use iTunes::Sid::Atom;
 
-our $VERSION = '0.41';
+our $VERSION = '0.42';
 
 #-----------  determines whether data is saved to .drms by default -----------#
 
@@ -28,6 +29,7 @@ my $auto_read_guid_and_mac_in_drms_dir = 1;
 # to adapt to a typical dual boot setup, may need to substitute
 #     'disk-2' for 'disk-1' or '/mnt' for '/media', etc.
 my @default_SCInfo_directory = (
+    '/Users/Shared/SC Info/',
     '/media/disk-1/ProgramData/Apple Computer/iTunes/SC Info/',
     '/media/disk-1/Documents and Settings/Application Data/Apple Computer/iTunes/SC Info',
     '/ProgramData/Apple Computer/iTunes/SC Info/',
@@ -75,7 +77,7 @@ sub get_sid_iv {
 sub get_sid_key {
     my ($mac) = @_;
     use bigint;
-    if ( !$mac or length $mac != 6 ) {
+    if ( ( !$mac  ) or length $mac != 6 ) {
         carp("Bad hwID for mac string");
         return;
     }
@@ -125,7 +127,7 @@ sub _find_sid {
     my $windows_sid_dir = "/Apple Computer/iTunes/SC Info/";
     my $windows_sid     = $windows_sid_dir . $sid;
 
-    my $dir_filter = qr{$darwin_sid_dir|$windows_sid_dir};
+    my $dir_filter = qr{$darwin_sid_dir|$windows_sid_dir}x;
     my @sid_dirs =
       File::Find::Rule->directory()->maxdepth(8)->name($dir_filter)->in('/');
     my @sids = File::Find::Rule->file()->name($sid)->in(@sid_dirs);
@@ -138,7 +140,7 @@ sub _find_sid {
 
 sub _trim_head_nulls {
     my ($rbuf) = @_;
-    $$rbuf =~ s/^(\x00\x00\x00\x00)+//;
+    $$rbuf =~ s/^(\x00\x00\x00\x00)+//x;
     return $rbuf;
 }
 
@@ -148,13 +150,13 @@ sub new {
     my ( $class, %args ) = @_;
     my $self = {};
     bless( $self, $class );
-    foreach my $k (qw( DEBUG DEBUGDUMPFILE file key iv mac 
-      regdata iTunes_platform scinfo_directory )) {
+    foreach my $k (qw( DEBUG DEBUGDUMPFILE file key iv 
+                                    mac regdata scinfo_directory )) {
         $self->{$k} = $args{$k} if exists $args{$k};
     }
     $self->{meta} = {};
     $self->{DEBUG} = 0 unless exists $self->{DEBUG};
-    push @default_SCInfo_directory, $self->{scinfo_directory}
+    unshift @default_SCInfo_directory, $self->{scinfo_directory}
       if exists $self->{scinfo_directory};
     if ( exists $self->{file} ) {
         if ( $self->{file} eq 'SCINFOSIDB' ) {
@@ -174,6 +176,7 @@ sub DESTROY {
     if ( ref $self->{root} ) {
         $self->{root}->DESTROY;
     }
+    return;
 }
 
 sub ReadFile {
@@ -189,7 +192,7 @@ sub ReadFile {
         $self->iv($iv);
         $self->decrypt() or croak "bad decrypt";
     }
-    $self->{meta}->{filesize} = length $self->{buffer};
+    return $self->{meta}->{filesize} = length $self->{buffer};
 }
 
 sub ParseBuffer {
@@ -210,6 +213,7 @@ sub ParseBuffer {
     $self->_trim_after_itgr();
     print "Found $self->{atom_count} atoms.\n" if $self->{DEBUG};
     $self->DumpTree( $self->{DEBUGDUMPFILE} )  if $self->{DEBUG} > 1;
+    return;
 }
 
 sub WriteFile {
@@ -219,6 +223,7 @@ sub WriteFile {
     binmode $outfh;
     print $outfh $self->{buffer};
     close $outfh;
+    return;
 }
 
 sub WriteFileEncrypted {
@@ -229,6 +234,7 @@ sub WriteFileEncrypted {
     $self->encrypt();
     print $outfh $self->{encrypted_buffer};
     close $outfh;
+    return;
 }
 
 sub ParseSidContainer {
@@ -245,7 +251,7 @@ sub ParseSidContainer {
         );
         print $atom->type, " at $posit size ", $atom->size, "\n"
           if $self->{DEBUG};
-        last unless $atom->size > 7;    # sanity check
+        last if $atom->size < 8;    # sanity check
         $self->{atom_count}++;
         if ( $atom->isContainer() ) {
             if ( $atom->isRootAtomType() ) {
@@ -269,6 +275,7 @@ sub ParseSidContainer {
         last if $atom->isRootAtomType();
         $posit += $atom->size;
     }
+    return $self->{atom_count};
 }
 
 sub SidType { return shift->{meta}->{sid_type} }
@@ -280,13 +287,14 @@ sub AtomTree {
 
 sub DumpTree {
     my ( $self, $outfile ) = @_;
-    if ( $outfile and open( my $dumpfh, ">$outfile" ) ) {
+    if ( $outfile and open( my $dumpfh, '>', $outfile ) ) {
         print $dumpfh $self->AtomTree();
         close $dumpfh;
     }
     else {
         print $self->AtomTree();
     }
+    return;
 }
 
 sub _save_mac_to_drms_dir {
@@ -318,7 +326,7 @@ sub _read_mac_from_drms_dir {
         binmode $fh;
         my $s = <$fh>;
         close $fh;
-        if ( $s =~ m/^mac=(.+)/ ) {
+        if ( $s =~ m/^mac=(.+)/x ) {
             $mac = $1;
             $self->{mac} = $mac;
             print "got mac from file $in_file\n" if $self->{DEBUG};
@@ -334,10 +342,10 @@ sub FindAtom {
     my ( $self, $type ) = @_;
     return unless $self->{root};
     my @atoms =
-      grep { $type and $_->type and $_->type =~ /$type$/i }
+      grep { $type and $_->type and $_->type =~ /$type$/xi }
       @{ $self->{root}->getAllRelatives() };
     return @atoms if wantarray;
-    return unless scalar @atoms > 0;
+    return if scalar @atoms <= 0;
     return $atoms[0];
 }
 
@@ -345,7 +353,7 @@ sub key {
     my ( $self, $newkey ) = @_;
     $self->{key} = $newkey if defined $newkey;
 #    $self->{mac} ||= $self->_get_hardware_data_string();
-    if ( !$self->{key} or $self->{key} eq 'FIND' ) {
+    if ( ( !$self->{key} ) or ( $self->{key} eq 'FIND' )  ) {
         $self->{key} = get_sid_key( $self->mac() );
     }
     return $self->{key};
@@ -354,7 +362,7 @@ sub key {
 sub iv {
     my ( $self, $newiv ) = @_;
     $self->{iv} = $newiv if defined $newiv;
-    if ( !$self->{iv} or $self->{iv} eq 'FIND' ) {
+    if ( ( !$self->{iv} ) or $self->{iv} eq 'FIND' ) {
         $self->{iv} = get_sid_iv();
     }
     return $self->{iv};
@@ -431,102 +439,116 @@ sub sid_version {
     return;
 }
 
+sub _get_darwin_mac {
+    # if OS X was the iTunes platform that made the SC Info files we will use,
+    # so the ethernet MAC address should work ok
+    # Try to get MAC from parsing text produced by running ifconfig.
+    # This will fail if this cannot run and display a MAC address.
+    open3(undef, my $reader, undef, 'ifconfig');
+    read $reader, my $parse_text, 2048 or carp("Bad run of ifconfig: $!");
+    $parse_text =~ m/(  (?:[0-9a-f]{2}[:-]){5} [0-9a-f]{2} )/ixms;
+    if ($1) {
+        return pack( "C*", map { hex } ( split /-|:/x, $1 ) );
+    }
+    carp("MAC address not found via ifconfig");
+    return;
+}
+
+sub _parse_regdata {
+    my( $self) = @_;
+    
+    # if MSWin32 was the iTunes platform that made SC Info files
+    # and running Linux, BSD, or Solaris with a Windows partition mounted
+    # Iwill need to get the registry data from a "regdata" file
+    my ( $volume, $bios, $processor, $ProductID , @lines);
+    if ( open my $infh, '<', $self->{regdata} ) {
+        @lines = <$infh>;
+        close $infh;
+    }
+    for my $s (@lines) {
+        $s =~ s/\r|\n//xg;
+        next unless $s;
+        if ( $s =~ /SystemBiosVersion\s.+SZ\s+(\S.+)$/x ) {
+            $bios = $1;
+        }
+        if ( $s =~ /ProcessorNameString\s.+SZ\s+(\S.+)$/x ) {
+            $processor = $1;
+        }
+        if ( $s =~ /ProductId\s.+SZ\s+(\S.+)$/x ) {
+            $ProductID = $1;
+        }
+        if ( $s =~ /Volume Serial Number is\s+(\S+)$/x ) {
+            $volume = $1;
+        }
+    }
+    print "Bios: [ " , $bios , " ]\nCPU: [ ", $processor, " ]\n",
+      "Product ID: [ ", $ProductID, " ]\nVolume Serial: [ ", $volume, " ]\n"
+      if $self->{DEBUG};
+    $bios =~ s/\\0/\x00/xg;
+    $volume =~ s/-//x;
+    $volume = pack "L", hex $volume;
+    
+    return ( $volume, $bios, $processor, $ProductID );
+}
+
 sub _get_hardware_data_string {
     my ($self) = @_;
-    return $self->{mac} if $self->{mac};
-
-    my $hardware_string = "\x00\x00\x00\x00\x00\x00";
+    if( $self->{mac} ) {
+        return $self->{mac};
+    }
+    elsif( ! exist $self->{regdata} ) {
+        
+        # no regdata file specified, so let's hope we can get this via the MAC
+        # if we have an OS X origin of SC Info
+        return _get_darwin_mac();
+    }
+   
+    my ( $volume, $bios, $processor, $ProductID ) =
+      $self->_parse_regdata();
+    my $hw_id_md5 = Digest::MD5->new;
+    $hw_id_md5->add("cache-controlEthernet");
     
-    my $platform = $self->{platform};
-    if ( $platform and $platform eq "Darwin" ) {
-
-        # OS X was the iTunes platform that made the SC Info files we will use,
-        # so the ethernet MAC address should work ok
-        # Try to get MAC from parsing text produced by running ifconfig.
-        # This will fail if this cannot run and display a MAC address.
-        my $parse_text = `ifconfig`;
-        $parse_text =~
-          m/^.+( ((?:(\d{1,2}|[a-fA-F]{1,2}){2})(?::|-*)){6} ) /xms;
-        if ($1) {
-            $hardware_string = pack( "C*", map { hex } ( split /-|:/, $1 ) );
-        }
-        else {
-            carp("MAC address not found via ifconfig");
-            return;
-        }
+    if ($volume) {
+        $hw_id_md5->add(
+          _info_MD5( substr( $volume, 0, 4 ), 0 ) );
     }
     else {
-
-        # Default case: MSWin32 was the iTunes platform that made SC Info files
-        # Running Linux, BSD, or Solaris with a Windows partition mounted?
-        # If so, will need to get the registry data from a "regdata" file
-        my ( $volume, $bios, $processor, $ProductID );
-        if ( open my $infh, '<', $self->{regdata} ) {
-            my @lines = <$infh>;
-            close $infh;
-            for my $s (@lines) {
-                $s =~ s/\r|\n//g;
-                next unless $s;
-                if ( $s =~ /SystemBiosVersion\s.+SZ\s+(\S.+)$/ ) {
-                    $bios = $1;
-                }
-                elsif ( $s =~ /ProcessorNameString\s.+SZ\s+(\S.+)$/ ) {
-                    $processor = $1;
-                }
-                elsif ( $s =~ /ProductId\s.+SZ\s+(\S.+)$/ ) {
-                    $ProductID = $1;
-                }
-                elsif ( $s =~ /Volume Serial Number is\s+(\S+)$/ ) {
-                    $volume = $1;
-                }
-            }
-            print "Bios: [ " , $bios , " ]\nCPU: [ ", $processor, " ]\n",
-              "Product ID: [ ", $ProductID, " ]\nVolume Serial: [ ", $volume, " ]\n"
-              if $self->{DEBUG};
-            $bios =~ s/\\0/\x00/g;
-            $volume =~ s/-//;
-            $volume = pack "L", hex $volume;
-            my $hw_id_md5 = Digest::MD5->new;
-            $hw_id_md5->add("cache-controlEthernet");
-            if ($volume) {
-                $hw_id_md5->add(
-                    _info_MD5( substr( $volume, 0, 4 ), 0 ) );
-            }
-            else {
-                carp("Cannot find volume serial number");
-                return;
-            }
-            if ($bios) {
-                $hw_id_md5->add( _info_MD5( $bios, 0 ) );
-            }
-            else {
-                carp( "Cannot find the bios string from file ",
-                    $self->{regdata_file} );
-                return;
-            }
-            if ($processor) {
-                $hw_id_md5->add( _info_MD5( $processor, 1 ) );
-            }
-            else {
-                carp( "Cannot find the CPU string from file ",
-                    $self->{regdata_file} );
-                return;
-            }
-            if ($ProductID) {
-                $hw_id_md5->add( _info_MD5( $ProductID, 1 ) );
-            }
-            else {
-                carp( "Cannot find the Windows software ProductId from file ",
-                    $self->{regdata_file} );
-                return;
-            }
-            $hardware_string = substr $hw_id_md5->digest, 0, 6;
-        }
+        carp("Cannot find volume serial number");
+        return;
     }
-    $self->{mac} = $hardware_string;
+    
+    if ($bios) {
+        $hw_id_md5->add( _info_MD5( $bios, 0 ) );
+    }
+    else {
+        carp( "Cannot find the bios string from file ",
+          $self->{regdata_file} );
+            return;
+    }
+    
+    if ($processor) {
+      $hw_id_md5->add( _info_MD5( $processor, 1 ) );
+    }
+    else {
+        carp( "Cannot find the CPU string from file ",
+          $self->{regdata_file} );
+        return;
+    }
+    
+    if ($ProductID) {
+        $hw_id_md5->add( _info_MD5( $ProductID, 1 ) );
+    }
+    else {
+        carp( "Cannot find the Windows software ProductId from file ",
+          $self->{regdata_file} );
+        return;
+    }
+    
+    my $hwID = substr $hw_id_md5->digest, 0, 6;
+    $self->{mac} = $hwID;
     print "hwID is: 0x", ( join '', map { sprintf '%02X', $_ }  
-      unpack "C*", $hardware_string ), " ( $hardware_string )\n" if $self->{DEBUG};
-    return $hardware_string;
+      unpack "C*", $hwID ), " ( $hwID )\n" if $self->{DEBUG};
+    return $hwID;
 }
 
 sub _trim_after_itgr {
@@ -534,6 +556,7 @@ sub _trim_after_itgr {
     my @itgr_atoms = $self->FindAtom('itgr') or return;
     my $last_itgr = $itgr_atoms[ scalar(@itgr_atoms) - 1 ];
     $self->{buffer} = substr( $self->{buffer}, 0, $last_itgr->Ending );
+    return length $self->{buffer};
 }
 
 sub find_veggie_for_userID {
@@ -579,10 +602,14 @@ sub find_veggie_for_userID {
     if( $auto_save_guid_and_mac_in_drms_dir and $guid_mac ) {
         my $guid_entry_file = _drms_directory . 'guID';
         if( ! -f $guid_entry_file ) {
-            open( my $gfh, '>', $guid_entry_file );
-            binmode $gfh;
-            print $gfh $guid_mac;
-            close $gfh;
+            if( open( my $gfh, '>', $guid_entry_file ) ) {
+                binmode $gfh;
+                print $gfh $guid_mac;
+                close $gfh;
+            }
+            else {              
+                carp( "Cannot open file $guid_entry_file: $!");
+            }
         }
     }
     my $usag =
@@ -597,7 +624,7 @@ sub find_veggie_for_userID {
     my $table_size = $valu->size - 646;
     if ( $valu and $table_size > 100000 ) {
         my $table_bytes = substr $valu->data, 638;
-        my @byte_table = split //, $table_bytes;
+        my @byte_table = split //x, $table_bytes;
         my @int_table = unpack "N*", $table_bytes;
         my $veggie = substr $valu->data, 28, 6;
         $self->{veggie_table}->{as_byte}->{$veggie}    = \@byte_table;
@@ -618,6 +645,7 @@ sub fetch_all_user_keys {
         key     => 'FIND',
         regdata => $self->{regdata},
     );
+    my $fetched = 0;
     my @users = $sb->FindAtom('user');
     for my $usr (@users) {
         my $userID = $usr->MainVersion();
@@ -632,7 +660,7 @@ sub fetch_all_user_keys {
         for my $b_key (@b_keys) {
             my $keyID   = $b_key->MainVersion();
             my $keyType = $b_key->DirectChildren('type');
-            if ( !$keyType or $keyType->Data32() != 3 ) {
+            if ( ( !$keyType ) or $keyType->Data32() != 3 ) {
                 carp( " Key crypto version compatibility error: version is ",
                     $keyType ? $keyType->Data32 : 'nil' );
                 next;
@@ -655,8 +683,10 @@ sub fetch_all_user_keys {
             my $decrypted_key = _decode_16_bytes( $encrypted, $key_key );
             print "decrypted key is $decrypted_key\n" if $self->{DEBUG};
             $self->{user_drm_keys}->{$userID}->{$keyID} = $decrypted_key;
+            ++$fetched;
         }
     }
+    return $fetched;
 }
 
 # Write to .drms directory (do not overwrite unless overwrite is ok )
@@ -666,10 +696,11 @@ sub write_all_user_keys_to_drms_dir {
     my $overwrite_ok = $args{overwrite_ok};
     my $drm_dir      = _drms_directory();
     mkpath($drm_dir);
+    my $written = 0;
     while ( my ( $userID, $keys ) = each %{ $self->{user_drm_keys} } ) {
         while ( my ( $keyID, $keyval ) = each %{$keys} ) {
             my $filename = sprintf "%s%08X.%03d", $drm_dir, $userID, $keyID;
-            next if -f $filename and !$overwrite_ok;
+            next if -f $filename and ( !$overwrite_ok );
             print "printing key $keyval to file $filename\n"
               if $self->{DEBUG};
             open my $outf, '>', $filename or do {
@@ -679,9 +710,15 @@ sub write_all_user_keys_to_drms_dir {
             binmode $outf;
             print $outf $keyval;
             close $outf;
+            ++$written;
         }
     }
+    return $written;
 }
+
+1;
+
+__END__
 
 =head1 NAME
 
@@ -726,7 +763,7 @@ sub write_all_user_keys_to_drms_dir {
         my $sid = iTunes::Sid( file => 'SCINFOSIDB', regdata => 'filename' );
     
     my $sid = iTunes::Sid( file => 'SCINFOSIDD', regdata => 'filename',
-        scinfo_direcory 
+        scinfo_directory 
           => '/media/windisk/ProgramData/Apple Computer/iTunes/SC Info' );
     
     SCINFOSIDB and SCINFOSIDD are 'magic' file names indicating we should look 
@@ -1042,4 +1079,3 @@ Questions, feature requests and bug reports should go to <wherrera@skylightview.
 
 =cut
 
-return 1;
